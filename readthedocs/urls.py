@@ -118,6 +118,8 @@ groups = [
     deprecated_urls,
 ]
 
+if 'readthedocs.donate' in settings.INSTALLED_APPS:
+    # Include donation URL's
 if settings.DO_NOT_TRACK_ENABLED:
     # Include Do Not Track URLs if DNT is supported
     groups.append(dnt_urls)

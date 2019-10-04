@@ -71,60 +71,6 @@ class DomainInline(admin.TabularInline):
     model = Domain
 
 
-# Turning off to support Django 1.9's requirement
-# to not import apps that aren't in INSTALLED_APPS on rtd.com
-# class ImpressionInline(admin.TabularInline):
-#     from readthedocs.donate.models import ProjectImpressions
-#     model = ProjectImpressions
-#     readonly_fields = (
-#         'date',
-#         'promo',
-#         'offers',
-#         'views',
-#         'clicks',
-#         'view_ratio',
-#         'click_ratio',
-#     )
-#     extra = 0
-#     can_delete = False
-#     max_num = 15
-
-#     def view_ratio(self, instance):
-#         return instance.view_ratio * 100
-
-#     def click_ratio(self, instance):
-#         return instance.click_ratio * 100
-
-
-class ProjectOwnerBannedFilter(admin.SimpleListFilter):
-
-    """
-    Filter for projects with banned owners.
-
-    There are problems adding `users__profile__banned` to the `list_filter`
-    attribute, so we'll create a basic filter to capture banned owners.
-    """
-
-    title = 'project owner banned'
-    parameter_name = 'project_owner_banned'
-
-    OWNER_BANNED = 'true'
-    NOT_OWNER_BANNED = 'false'
-
-    def lookups(self, request, model_admin):
-        return (
-            (self.OWNER_BANNED, _('Yes')),
-            (self.NOT_OWNER_BANNED, _('No')),
-        )
-
-    def queryset(self, request, queryset):
-        if self.value() == self.OWNER_BANNED:
-            return queryset.filter(users__profile__banned=True)
-        if self.value() == self.NOT_OWNER_BANNED:
-            return queryset.filter(users__profile__banned=False)
-        return queryset
-
-
 class ProjectAdmin(admin.ModelAdmin):
 
     """Project model admin view."""
