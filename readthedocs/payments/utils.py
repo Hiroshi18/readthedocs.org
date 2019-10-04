@@ -1,4 +1,7 @@
-"""Payment utility functions
+# -*- coding: utf-8 -*-
+
+"""
+Payment utility functions.
 
 These are mostly one-off functions. Define the bulk of Stripe operations on
 :py:class:`readthedocs.payments.forms.StripeResourceMixin`.
@@ -7,11 +10,12 @@ These are mostly one-off functions. Define the bulk of Stripe operations on
 import stripe
 from django.conf import settings
 
-stripe.api_key = getattr(settings, 'STRIPE_SECRET', None)
+
+stripe.api_key = settings.STRIPE_SECRET
 
 
 def delete_customer(customer_id):
-    """Delete customer from Stripe, cancelling subscriptions"""
+    """Delete customer from Stripe, cancelling subscriptions."""
     try:
         customer = stripe.Customer.retrieve(customer_id)
         return customer.delete()
@@ -20,7 +24,7 @@ def delete_customer(customer_id):
 
 
 def cancel_subscription(customer_id, subscription_id):
-    """Cancel Stripe subscription, if it exists"""
+    """Cancel Stripe subscription, if it exists."""
     try:
         customer = stripe.Customer.retrieve(customer_id)
         if hasattr(customer, 'subscriptions'):

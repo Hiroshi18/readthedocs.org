@@ -12,6 +12,7 @@ var gulp = require('gulp'),
     vinyl_buffer = require('vinyl-buffer'),
     es = require('event-stream'),
     path = require('path'),
+    eslint = require('gulp-eslint'),
     pkg_config = require('./package.json');
 
 // Applications with primary static sources. We define these here to avoid
@@ -26,8 +27,10 @@ var sources = {
         'css/badge_only.css': {src: 'bower_components/sphinx-rtd-theme/sphinx_rtd_theme/static/css/badge_only.css'},
         'css/theme.css': {src: 'bower_components/sphinx-rtd-theme/sphinx_rtd_theme/static/css/theme.css'},
 
+        'font/Lato-BoldItalic.ttf': {src: 'bower_components/lato-googlefont/Lato-BoldItalic.ttf'},
         'font/Lato-Bold.ttf': {src: 'bower_components/lato-googlefont/Lato-Bold.ttf'},
         'font/Lato-Regular.ttf': {src: 'bower_components/lato-googlefont/Lato-Regular.ttf'},
+        'font/Lato-Italic.ttf': {src: 'bower_components/lato-googlefont/Lato-Italic.ttf'},
         'font/Inconsolata-Bold.ttf': {src: 'bower_components/inconsolata-googlefont/Inconsolata-Bold.ttf'},
         'font/Inconsolata-Regular.ttf': {src: 'bower_components/inconsolata-googlefont/Inconsolata-Regular.ttf'},
         'font/RobotoSlab-Bold.ttf': {src: 'bower_components/robotoslab-googlefont/RobotoSlab-Bold.ttf'},
@@ -38,6 +41,7 @@ var sources = {
         'font/fontawesome-webfont.svg': {src: 'bower_components/font-awesome/fonts/fontawesome-webfont.svg'},
         'font/fontawesome-webfont.ttf': {src: 'bower_components/font-awesome/fonts/fontawesome-webfont.ttf'},
         'font/fontawesome-webfont.woff': {src: 'bower_components/font-awesome/fonts/fontawesome-webfont.woff'},
+        'font/fontawesome-webfont.woff2': {src: 'bower_components/font-awesome/fonts/fontawesome-webfont.woff2'},
         'font/FontAwesome.otf': {src: 'bower_components/font-awesome/fonts/FontAwesome.otf'}
     },
     projects: {
@@ -88,7 +92,8 @@ function build_app_sources (application, minify) {
                     return browserify_stream(
                         file, bundle_config, cb
                     );
-                }));
+                }))
+                .pipe(rename(application + path.sep + entry_path));
 
             if (minify) {
                 bundle = bundle
@@ -158,7 +163,7 @@ function browserify_stream (file, config, cb_output) {
                 gulp_util.beep();
                 gulp_util.log('Browserify error:', ev.message);
             })
-            .pipe(vinyl_source(file.path, file))
+            .pipe(vinyl_source(path.basename(file.path)))
             .pipe(es.map(function (data, cb_inner) {
                 cb_output(null, data);
             }));
@@ -252,6 +257,17 @@ gulp.task('dev', function (done) {
         .pipe(es.wait(function (err, body) {
             done(null);
         }));
+});
+
+gulp.task('lint', function (done) {
+    var paths = Object.keys(sources).map(function(application) {
+      return path.join(pkg_config.name, application, 'static-src', '**', '*.js');
+    });
+    return gulp
+        .src(paths)
+        .pipe(eslint())
+        .pipe(eslint.format())
+        .pipe(eslint.failAfterError());
 });
 
 gulp.task('default', ['build']);

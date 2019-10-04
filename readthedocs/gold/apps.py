@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+
+"""Django app configuration for the Gold membership app."""
+
 from django.apps import AppConfig
 
 

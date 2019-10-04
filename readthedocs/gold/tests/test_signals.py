@@ -1,13 +1,10 @@
-import mock
+# -*- coding: utf-8 -*-
 import django_dynamic_fixture as fixture
-from django.test import TestCase
+import mock
 from django.contrib.auth.models import User
-from django.db.models.signals import pre_delete
-
-from readthedocs.projects.models import Project
+from django.test import TestCase
 
 from ..models import GoldUser
-from ..signals import delete_customer
 
 
 class GoldSignalTests(TestCase):

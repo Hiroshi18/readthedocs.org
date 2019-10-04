@@ -1,14 +1,23 @@
-"""Django admin interface for core models"""
+# -*- coding: utf-8 -*-
 
-from datetime import datetime, timedelta
+"""Django admin interface for core models."""
+
+from datetime import timedelta
 
 from django.contrib import admin
-from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 
 from readthedocs.core.models import UserProfile
 from readthedocs.projects.models import Project
+from rest_framework.authtoken.admin import TokenAdmin
+
+
+# Monkeypatch raw_id_fields onto the TokenAdmin
+# https://www.django-rest-framework.org/api-guide/authentication/#with-django-admin
+TokenAdmin.raw_id_fields = ['user']
 
 
 class UserProjectInline(admin.TabularInline):
@@ -21,7 +30,7 @@ class UserProjectInline(admin.TabularInline):
 
 class UserProjectFilter(admin.SimpleListFilter):
 
-    """Filter users based on project properties"""
+    """Filter users based on project properties."""
 
     parameter_name = 'project_state'
     title = _('user projects')
@@ -38,7 +47,8 @@ class UserProjectFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
-        """Add filters to queryset filter
+        """
+        Add filters to queryset filter.
 
         ``PROJECT_ACTIVE`` and ``PROJECT_BUILT`` look for versions on projects,
         ``PROJECT_RECENT`` looks for projects with builds in the last year
@@ -48,13 +58,22 @@ class UserProjectFilter(admin.SimpleListFilter):
         if self.value() == self.PROJECT_BUILT:
             return queryset.filter(projects__versions__built=True)
         if self.value() == self.PROJECT_RECENT:
-            recent_date = datetime.today() - timedelta(days=365)
+            recent_date = timezone.now() - timedelta(days=365)
             return queryset.filter(projects__builds__date__gt=recent_date)
 
 
 class UserAdminExtra(UserAdmin):
-    list_display = ('username', 'email', 'first_name',
-                    'last_name', 'is_staff', 'is_banned')
+
+    """Admin configuration for User."""
+
+    list_display = (
+        'username',
+        'email',
+        'first_name',
+        'last_name',
+        'is_staff',
+        'is_banned',
+    )
     list_filter = (UserProjectFilter,) + UserAdmin.list_filter
     actions = ['ban_user']
     inlines = [UserProjectInline]
@@ -63,6 +82,7 @@ class UserAdminExtra(UserAdmin):
         return hasattr(obj, 'profile') and obj.profile.banned
 
     is_banned.short_description = 'Banned'
+    is_banned.boolean = True
 
     def ban_user(self, request, queryset):
         users = []

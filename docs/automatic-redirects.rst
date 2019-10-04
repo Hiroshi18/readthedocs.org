@@ -14,7 +14,7 @@ For example::
     pip.readthedocs.io -> pip.readthedocs.io/en/latest/
     www.pip-installer.org -> www.pip-installer.org/en/latest
 
-This only works for the root url, not for internal pages. It's designed to redirect people from http://pip.readthedocs.io/ to the default version of your documentation, since serving up a 404 here would be a pretty terrible user experience. (If your "develop" branch was designated as your default version, then it would redirect to http://pip.readthedocs.io/en/develop.) But, it's not a universal redirecting solution. So, for example, a link to an internal page like http://pip.readthedocs.io/usage.html doesn't redirect to http://pip.readthedocs.io/en/latest/usage.html. 
+This only works for the root URL, not for internal pages. It's designed to redirect people from http://pip.readthedocs.io/ to the default version of your documentation, since serving up a 404 here would be a pretty terrible user experience. (If your "develop" branch was designated as your default version, then it would redirect to http://pip.readthedocs.io/en/develop.) But, it's not a universal redirecting solution. So, for example, a link to an internal page like http://pip.readthedocs.io/usage.html doesn't redirect to http://pip.readthedocs.io/en/latest/usage.html.
 
 The reasoning behind this is that RTD organizes the URLs for docs so that multiple translations and multiple versions of your docs can be organized logically and consistently for all projects that RTD hosts. For the way that RTD views docs, http://pip.readthedocs.io/en/latest/ is the root directory for your default documentation in English, not http://pip.readthedocs.io/. Just like http://pip.readthedocs.io/en/develop/ is the root for your development documentation in English.
 
@@ -33,7 +33,7 @@ Supported Top-Level Redirects
 .. note:: These "implicit" redirects are supported for legacy reasons.
           We will not be adding support for any more magic redirects.
           If you want additional redirects,
-          they should live at a prefix like :ref:`page-redirect`
+          they should live at a prefix like `Redirecting to a Page`_
 
 The main challenge of URL routing in Read the Docs is handling redirects correctly. Both in the interest of redirecting older URLs that are now obsolete, and in the interest of handling "logical-looking" URLs (leaving out the lang_slug or version_slug shouldn't result in a 404), the following redirects are supported::
 
@@ -43,8 +43,6 @@ The main challenge of URL routing in Read the Docs is handling redirects correct
 
 The language redirect will work for any of the defined ``LANGUAGE_CODES`` we support.
 The version redirect will work for supported versions.
-
-.. _page-redirect:
 
 Redirecting to a Page
 ---------------------

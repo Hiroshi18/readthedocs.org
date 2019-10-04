@@ -1,79 +1,114 @@
 # Base packages
-pip==9.0.1
-appdirs==1.4.2
-virtualenv==15.0.1
-docutils==0.11
-Sphinx==1.5.3
-sphinx_rtd_theme==0.2.0
-Pygments==2.0.2
-mkdocs==0.14.0
-readthedocs-build==2.0.6
-django==1.9.12
+pip==19.2.3
+appdirs==1.4.3
+virtualenv==16.7.5
 
-django-tastypie==0.13.0
-django-haystack==2.5.0
-celery-haystack==0.7.2
-django-guardian==1.4.6
-django-extensions==1.7.4
-djangorestframework==3.5.4
-django-vanilla-views==1.0.4
-pytest-django==2.8.0
+django==1.11.24  # pyup: <1.12
+django-extensions==2.2.1
+django_polymorphic==2.1.2
 
-requests==2.3.0
-slumber==0.6.0
-lxml==3.3.5
+djangorestframework==3.10.3
 
-django-countries==3.4.1
+# For intersphinx during builds
+# Use <2.x until we fix some issues in our theme.
+# Some things are not rendering properly and sidebar shows titles in gray.
+Sphinx==1.8.5  # pyup: <2.0.0
+
+# Filtering for the REST API
+django-filter==2.2.0
+
+drf-flex-fields==0.6.1
+drf-extensions==0.5.0
+
+django-vanilla-views==1.0.6
+jsonfield==2.0.2
+
+requests==2.22.0
+requests-toolbelt==0.9.1
+slumber==0.7.1
+pyyaml==5.1.2
+Pygments==2.4.2
 
 # Basic tools
-redis==2.10.3
-celery==3.1.23
-django-celery==3.1.17
-git+https://github.com/pennersr/django-allauth.git@d869aff9#egg=django-allauth
-dnspython==1.11.0
+# Redis 3.x has an incompatible change and fails
+# https://stackoverflow.com/questions/53331405/django-compress-error-invalid-input-of-type-cachekey
+# https://github.com/sebleier/django-redis-cache/pull/162
+redis==2.10.6  # pyup: ignore
+# Kombu >4.3 requires redis>=3.2
+kombu==4.3.0  # pyup: ignore
+# Celery 4.2 is incompatible with our code
+# when ALWAYS_EAGER = True
+celery==4.1.1  # pyup: ignore
 
-# VCS
-httplib2==0.7.7
+django-allauth==0.40.0
+
+GitPython==3.0.2
 
 # Search
-elasticsearch==1.5.0
-pyelasticsearch==0.7.1
-pyquery==1.2.2
+elasticsearch==6.4.0  # pyup: <7.0.0
+
+
+# elasticsearch-dsl==6.3.1 produces this error
+#   File "/home/travis/build/rtfd/readthedocs.org/.tox/py36/lib/python3.6/site-packages/django_elasticsearch_dsl/documents.py", line 8, in <module>
+#     from elasticsearch_dsl.document import DocTypeMeta as DSLDocTypeMeta
+# ImportError: cannot import name 'DocTypeMeta'
+#
+# Commit 97e3f75 adds the NestedFacet
+git+https://github.com/elastic/elasticsearch-dsl-py@97e3f756a8cacd1c863d3ced3d17abcafbb0f85e#egg=elasticsearch-dsl==6.1.1
+
+# django-elasticsearch-dsl==6.4.1 produces this error
+#   File "/home/travis/build/readthedocs/readthedocs.org/.tox/py36/lib/python3.6/site-packages/django_elasticsearch_dsl/__init__.py", line 3, in <module>
+#     from .documents import DocType  # noqa
+#   File "/home/travis/build/readthedocs/readthedocs.org/.tox/py36/lib/python3.6/site-packages/django_elasticsearch_dsl/documents.py", line 7, in <module>
+#     from elasticsearch_dsl import Document as DSLDocument
+# ImportError: cannot import name 'Document'
+django-elasticsearch-dsl==0.5.1  # pyup: ignore
+pyquery==1.4.0
+
+# lxml is used by pyquery
+# defusedxml is recommended when using lxml
+lxml==4.4.1
+defusedxml==0.6.0
 
 # Utils
-django-gravatar2==1.4.0
-doc2dash==1.1.0
-pytz==2013b
-beautifulsoup4==4.1.3
-Unipath==0.2.1
+django-gravatar2==1.4.2
+pytz==2019.2
+Unipath==1.1
 django-kombu==0.9.4
-django-secure==0.1.2
-mimeparse==0.1.3
-mock==1.0.1
-stripe==1.20.2
-django-copyright==1.0.0
-django-formtools==1.0
-django-dynamic-fixture==1.8.5
-docker-py==1.3.1
-django-textclassifier==1.0
-django-annoying==0.10.1
-django-messages-extends==0.5
-django-filter==1.0.1
-djangorestframework-jsonp==1.0.2
+mock==3.0.5
+stripe==2.35.1
 
-# Docs
-sphinxcontrib-httpdomain==1.4.0
-commonmark==0.5.5
-recommonmark==0.4.0
+# unicode-slugify==0.1.5 is not released on PyPI yet
+git+https://github.com/mozilla/unicode-slugify@b696c37#egg=unicode-slugify==0.1.5
+
+django-formtools==2.1
+django-crispy-forms==1.7.2
+
+docker==4.0.2
+
+django-textclassifier==1.0
+# django-textclassifier doesn't have pinned versions
+# if there is an update they could break our code
+nltk==3.4.5
+textblob==0.15.3
+
+django-annoying==0.10.5
+django-messages-extends==0.6.0
+djangorestframework-jsonp==1.0.2
+django-taggit==1.1.0
+dj-pagination==2.4.0
 
 # Version comparison stuff
-Distutils2==1.0a3
-packaging==16.8
+packaging==19.1
 
 # Commenting stuff
-git+https://github.com/zestedesavoir/django-cors-middleware.git@def9dc2f5e81eed53831bcda79ad1c127ecb3fe2
-nilsimsa==0.3.7
+django-cors-middleware==1.4.0
 
-# Pegged git requirements
-git+https://github.com/zyga/django-pagination.git@86caf15#egg=django_pagination-dev
-git+https://github.com/alex/django-taggit.git#egg=django_taggit-dev
+# User agent parsing - used for analytics purposes
+user-agents==2.0
+
+# Utilities used to upload build media to cloud storage
+django-storages==1.7.1  # pyup: <1.8
+
+# Required only in development and linting
+django-debug-toolbar==2.0
