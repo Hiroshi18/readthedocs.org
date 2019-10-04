@@ -1,10 +1,143 @@
 {% extends 'projects/project_dashboard_base.html' %}
 
-{% block dashboard-onboard-extra %}
-    <!-- BEGIN Gold Pitch -->
-    {% if not request.user.gold.count and request.user.projects.count > 1 %}
-      <div class="module onboard onboard-accounts">
-        <h3>Support Read the Docs</h3>
+{% block title %}{% trans "Project Dashboard" %}{% endblock %}
+
+{% block dash-nav-projects %}active{% endblock %}
+
+{% block content %}
+  {% url "projects_import" as projects_import_url %}
+  {% url "socialaccount_connections" as social_accounts %}
+
+  <!-- BEGIN your projects list -->
+  <div class="col-major project-dashboard-right">
+    {% if project_list %}
+
+      {% if filter|length > 0 %}
+        <div class="module-header">
+          <h3>{% trans "Important Versions" %}</h3>
+        </div>
+
+        <div class="filter">
+          {% autopaginate filter 15 %}
+
+          <!-- BEGIN filter list -->
+          <div class="module">
+            <div class="module-wrapper">
+
+              <div class="module-list">
+                <div class="module-list-wrapper">
+                  <ul>
+                    {% include "core/filter_list.html" %}
+                  </ul>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          <!-- END filter list -->
+
+          {% paginate %}
+
+        </div>
+      {% endif %}
+
+      <div class="module">
+        <div class="module-wrapper">
+
+          <div class="module-header">
+            <form method="get" action="{{ projects_import_url }}">
+              <input type="submit" value="Import a Project" />
+            </form>
+            <h3>{% trans "Projects" %}</h3>
+          </div>
+
+          <div class="module-list">
+            <div class="module-list-wrapper">
+              <ul>
+                {% for project in project_list %}
+                  <li class="module-item">
+
+                    <span class="right quiet">
+                      {% with builds=project.builds.count %}
+
+                        <a href="{% url 'builds_project_list' project.slug %}">
+                          {% if builds == 0 %}
+                            {% trans "No builds yet" %}
+                          {% else %}
+                            <span class="build-count">
+                              {% if builds == 1 %}
+                                {% trans "1 build" %}
+                              {% else %}
+                                {{ builds }} {% trans "builds" %}
+                              {% endif %}
+                            </span>
+                          {% endif %}
+                        </a>
+                        {% if builds %}
+                          {% with build=project.get_latest_build %}
+                            {% if build.success %}
+                              <span class="build-state build-state-passing">{% trans "passing" %}</span>
+                            {% else %}
+                              <span class="build-state build-state-failing">{% trans "failing" %}</span>
+                            {% endif %}
+                          {% endwith %}
+                        {% endif %}
+
+                        <span class="item-menu">
+                          <a href="{% url 'projects_edit' project.slug %}">
+                            <img src="{{ MEDIA_URL }}images/gear-dark.png" />
+                          </a>
+                        </span>
+
+                      {% endwith %}
+                    </span>
+
+                    <a href="{% url "projects_manage" project.slug %}" class="module-item-title">
+                      {{ project.name }}
+                    </a>
+
+                  </li>
+                {% endfor %}
+              </ul>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+    {% else %}
+
+      <!-- BEGIN onboard import project -->
+      <div class="module onboard onboard-import-project">
+        <h2>Ready to share your documentation{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}?</h2>
+
+        {% with getting_started_url="http://docs.readthedocs.org/en/latest/getting_started.html" %}
+          <form method="get" action="{{ projects_import_url }}">
+            <p>
+              {% blocktrans %}
+                You don't have any projects yet, but you can start building documentation by importing one.
+                Not sure how to start documenting your project?
+                Check out the <a href="{{ getting_started_url }}">Getting Started Guide</a> to learn how.
+              {% endblocktrans %}
+            </p>
+
+            <input type="submit" value="Import a Project" />
+          </form>
+        {% endwith %}
+      </div>
+      <!-- END onboard import project -->
+
+    {% endif %}
+  </div>
+  <!-- END your projects list -->
+
+  <!-- BEGIN project side bar -->
+  <div class="col-minor project-dashboard-right">
+
+    <div class="module onboard onbard-accounts">
+
+      {% if request.user.socialaccount_set.count == 0 %}
+        <h3>Connect your Accounts</h3>
 
         <p>
             Read the Docs depends on users like you to help us keep the site sustainable.
