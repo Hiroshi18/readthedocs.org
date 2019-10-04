@@ -1,131 +1,145 @@
-from django.conf.urls import url, patterns, include
-from django.contrib import admin
+# pylint: disable=missing-docstring
+import os
+from functools import reduce
+from operator import add
+
 from django.conf import settings
-from django.views.generic.base import TemplateView
+from django.conf.urls import include, url
+from django.conf.urls.static import static
+from django.contrib import admin
+from django.views.generic.base import RedirectView, TemplateView
 
-from tastypie.api import Api
+from readthedocs.core.urls import core_urls, deprecated_urls, docs_urls
+from readthedocs.core.views import (
+    HomepageView,
+    SupportView,
+    do_not_track,
+    server_error_404,
+    server_error_500,
+)
+from readthedocs.search import views as search_views
+from readthedocs.search.api import PageSearchAPIView
 
-from api.base import (ProjectResource, UserResource, BuildResource,
-                      VersionResource, FileResource)
-from builds.filters import VersionFilter
-from core.views import SearchView
-from projects.feeds import LatestProjectsFeed, NewProjectsFeed
-from projects.filters import ProjectFilter
-from projects.constants import LANGUAGES_REGEX
-
-v1_api = Api(api_name='v1')
-v1_api.register(BuildResource())
-v1_api.register(UserResource())
-v1_api.register(ProjectResource())
-v1_api.register(VersionResource())
-v1_api.register(FileResource())
 
 admin.autodiscover()
 
-handler500 = 'core.views.server_error'
-handler404 = 'core.views.server_error_404'
+handler404 = server_error_404
+handler500 = server_error_500
 
-urlpatterns = patterns(
-    '',  # base view, flake8 complains if it is on the previous line.
-    url(r'^$', 'core.views.homepage'),
+basic_urls = [
+    url(r'^$', HomepageView.as_view(), name='homepage'),
+    url(r'^support/', SupportView.as_view(), name='support'),
     url(r'^security/', TemplateView.as_view(template_name='security.html')),
+    url(
+        r'^\.well-known/security.txt$',
+        TemplateView
+        .as_view(template_name='security.txt', content_type='text/plain'),
+    ),
+]
 
-    # For serving docs locally and when nginx isn't
-    url((r'^docs/(?P<project_slug>[-\w]+)/(?P<lang_slug>%s)/(?P<version_slug>'
-         r'[-._\w]+?)/(?P<filename>.*)$') % LANGUAGES_REGEX,
-        'core.views.serve_docs',
-        name='docs_detail'),
-
-    # Redirect to default version, if only lang_slug is set.
-    url((r'^docs/(?P<project_slug>[-\w]+)/(?P<lang_slug>%s)/$') % LANGUAGES_REGEX,
-        'core.views.redirect_lang_slug',
-        name='docs_detail'),
-
-    # Redirect to default version, if only version_slug is set.
-    url(r'^docs/(?P<project_slug>[-\w]+)/(?P<version_slug>[-._\w]+)/$',
-        'core.views.redirect_version_slug',
-        name='docs_detail'),
-
-    # Redirect to default version.
-    url(r'^docs/(?P<project_slug>[-\w]+)/$',
-        'core.views.redirect_project_slug',
-        name='docs_detail'),
-
-    # Handle /page/<path> redirects for explicit "latest" version goodness.
-    url(r'^docs/(?P<project_slug>[-\w]+)/page/(?P<filename>.*)$',
-        'core.views.redirect_page_with_filename',
-        name='docs_detail'),
-
-    # Handle single version URLs
-    url(r'^docs/(?P<project_slug>[-\w]+)/(?P<filename>.*)$',
-        'core.views.serve_single_version_docs',
-        name='docs_detail'),
-
-    # Handle fallbacks
-    url(r'^user_builds/(?P<project_slug>[-\w]+)/rtd-builds/(?P<version_slug>[-._\w]+?)/(?P<filename>.*)$',
-        'core.views.server_helpful_404',
-        name='user_buils_fallback'),
-    url(r'^user_builds/(?P<project_slug>[-\w]+)/translations/(?P<lang_slug>%s)/(?P<version_slug>[-._\w]+?)/(?P<filename>.*)$' % LANGUAGES_REGEX,
-        'core.views.server_helpful_404',
-        name='user_builds_fallback_translations'),
-
-    url(r'^i18n/', include('django.conf.urls.i18n')),
-    url(r'^projects/', include('projects.urls.public')),
-    url(r'^builds/', include('builds.urls')),
-    url(r'^search/project/', SearchView.as_view(), name='haystack_project'),
-    url(r'^search/', include('haystack.urls')),
-    url(r'^admin/', include(admin.site.urls)),
-    url(r'^dashboard/', include('projects.urls.private')),
-    url(r'^github', 'core.views.github_build', name='github_build'),
-    url(r'^bitbucket', 'core.views.bitbucket_build', name='bitbucket_build'),
-    url(r'^build/(?P<pk>[-\w]+)',
-        'core.views.generic_build',
-        name='generic_build'),
-    url(r'^random/(?P<project>[\w-]+)',
-        'core.views.random_page',
-        name='random_page'),
-    url(r'^random/$', 'core.views.random_page', name='random_page'),
-    url(r'^donate/$', 'core.views.donate', name='donate'),
-    url(r'^depth/$', 'core.views.queue_depth', name='queue_depth'),
-    url(r'^queue_info/$', 'core.views.queue_info', name='queue_info'),
-    url(r'^live/$', 'core.views.live_builds', name='live_builds'),
-    url(r'^500/$', 'core.views.divide_by_zero', name='divide_by_zero'),
-    url(r'^filter/version/$',
-        'django_filters.views.object_filter',
-        {'filter_class': VersionFilter, 'template_name': 'filter.html'},
-        name='filter_version'),
-    url(r'^filter/project/$',
-        'django_filters.views.object_filter',
-        {'filter_class': ProjectFilter, 'template_name': 'filter.html'},
-        name='filter_project'),
-    url(r'^wipe/(?P<project_slug>[-\w]+)/(?P<version_slug>[\w]{1}[-\w\.]+)/$',
-        'core.views.wipe_version',
-        name='wipe_version'),
-
-    url(r'^profiles/', include('profiles.urls.public')),
-    url(r'^accounts/', include('profiles.urls.private')),
+rtd_urls = [
+    url(r'^search/$', search_views.elastic_search, name='search'),
+    url(r'^dashboard/', include('readthedocs.projects.urls.private')),
+    url(r'^profiles/', include('readthedocs.profiles.urls.public')),
+    url(r'^accounts/', include('readthedocs.profiles.urls.private')),
     url(r'^accounts/', include('allauth.urls')),
-    url(r'^api/', include(v1_api.urls)),
-    url(r'^api/v2/', include('restapi.urls')),
-    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^feeds/new/$',
-        NewProjectsFeed(),
-        name="new_feed"),
-    url(r'^feeds/latest/$',
-        LatestProjectsFeed(),
-        name="latest_feed"),
-    url(r'^mlt/(?P<project_slug>[-\w]+)/(?P<filename>.*)$',
-        'core.views.morelikethis',
-        name='morelikethis'),
+    url(r'^notifications/', include('readthedocs.notifications.urls')),
+    url(r'^accounts/gold/', include('readthedocs.gold.urls')),
+    # For redirects
+    url(r'^builds/', include('readthedocs.builds.urls')),
+    # For testing the 404's with DEBUG on.
+    url(r'^404/$', handler404),
+    # For testing the 500's with DEBUG on.
+    url(r'^500/$', handler500),
+]
 
-)
+project_urls = [
+    url(r'^projects/', include('readthedocs.projects.urls.public')),
+]
 
-if settings.DEBUG:
-    urlpatterns += patterns(
-        '',  # base view, flake8 complains if it is on the previous line.
-        url('style-catalog/$',
-            TemplateView.as_view(template_name='style_catalog.html')),
-        url(regex='^%s/(?P<path>.*)$' % settings.MEDIA_URL.strip('/'),
-            view='django.views.static.serve',
-            kwargs={'document_root': settings.MEDIA_ROOT}),
+api_urls = [
+    url(r'^api/v2/', include('readthedocs.api.v2.urls')),
+    # Keep the `doc_search` at root level, so the test does not fail for other API
+    url(r'^api/v2/docsearch/$', PageSearchAPIView.as_view(), name='doc_search'),
+    url(
+        r'^api-auth/',
+        include('rest_framework.urls', namespace='rest_framework')
+    ),
+    url(r'^api/v3/', include('readthedocs.api.v3.urls')),
+]
+
+i18n_urls = [
+    url(r'^i18n/', include('django.conf.urls.i18n')),
+]
+
+admin_urls = [
+    url(r'^admin/', admin.site.urls),
+]
+
+dnt_urls = [
+    url(r'^\.well-known/dnt/$', do_not_track),
+
+    # https://github.com/EFForg/dnt-guide#12-how-to-assert-dnt-compliance
+    url(
+        r'^\.well-known/dnt-policy.txt$',
+        TemplateView
+        .as_view(template_name='dnt-policy.txt', content_type='text/plain'),
+    ),
+]
+
+debug_urls = []
+for build_format in ('epub', 'htmlzip', 'json', 'pdf'):
+    debug_urls += static(
+        settings.MEDIA_URL + build_format,
+        document_root=os.path.join(settings.MEDIA_ROOT, build_format),
     )
+debug_urls += [
+    url(
+        'style-catalog/$',
+        TemplateView.as_view(template_name='style_catalog.html'),
+    ),
+
+    # This must come last after the build output files
+    url(
+        r'^media/(?P<remainder>.+)$',
+        RedirectView.as_view(url=settings.STATIC_URL + '%(remainder)s'),
+        name='media-redirect',
+    ),
+]
+
+# Export URLs
+groups = [
+    basic_urls,
+    rtd_urls,
+    project_urls,
+    api_urls,
+    core_urls,
+    i18n_urls,
+    deprecated_urls,
+]
+
+if 'readthedocs.donate' in settings.INSTALLED_APPS:
+    # Include donation URL's
+if settings.DO_NOT_TRACK_ENABLED:
+    # Include Do Not Track URLs if DNT is supported
+    groups.append(dnt_urls)
+
+
+if settings.READ_THE_DOCS_EXTENSIONS:
+    groups.append([
+        url(r'^', include('readthedocsext.urls'))
+    ])
+
+if not settings.USE_SUBDOMAIN or settings.DEBUG:
+    groups.insert(0, docs_urls)
+if settings.ALLOW_ADMIN:
+    groups.append(admin_urls)
+if settings.DEBUG:
+    import debug_toolbar
+
+    debug_urls += [
+        url(r'^__debug__/', include(debug_toolbar.urls)),
+    ]
+    groups.append(debug_urls)
+
+urlpatterns = reduce(add, groups)

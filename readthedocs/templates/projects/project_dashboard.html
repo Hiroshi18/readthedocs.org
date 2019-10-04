@@ -1,6 +1,4 @@
-{% extends "base.html" %}
-{% load i18n %}
-{% load pagination_tags %}
+{% extends 'projects/project_dashboard_base.html' %}
 
 {% block title %}{% trans "Project Dashboard" %}{% endblock %}
 
@@ -142,54 +140,25 @@
         <h3>Connect your Accounts</h3>
 
         <p>
-          {% blocktrans %}
-            Have a Github account? Connect your account and import your existing projects automatically.
-          {% endblocktrans %}
+            Read the Docs depends on users like you to help us keep the site sustainable.
+        </p>
+        <p>
+            We now offer <a href="{% url "gold_detail" %}">Read the Docs Gold membership</a> to allow folks to support us.
+            Gold members allow us to keep the site running, and improving all the time.
+            If you find value in Read the Docs, please consider becoming a member.
         </p>
 
-        <form method="get" action="{{ social_accounts }}">
-          <input type="submit" value="Connect to Github" />
+        <form method="get" action="{% url "gold_detail" %}">
+          <input type="submit" value="Become a Gold user!" />
         </form>
       </div>
     {% else %}
+      <div class="module onboard onboard-accounts">
+        <h3>Thanks!</h3>
         <p>
-          <form method="get" action="{% url 'projects_import_github' %}">
-            <input type="submit" value="Import from GitHub" />
-          </form>
+          Your <a href="{% url "gold_detail" %}">support</a> of Read the Docs helps make the site better each and every month.
         </p>
-
+      </div>
     {% endif %}
-
-    <div class="module info info-docs">
-      <p>
-        Check out the <a href="http://docs.readthedocs.org/en/latest/index.html">documentation for Read the Docs</a>.
-        It contains lots of information about how to get the most out of RTD.
-      </p>
-    </div>
-  </div>
-  <!-- END project side bar -->
-
-  {% comment %}
-  {% if bookmark_list %}
-  <!-- BEGIN marks list -->
-  <div class="module">
-    <div class="module-wrapper">
-      <div class="module-header">
-        <h3>{% trans "Recently Bookmarked Docs" %} <span class="small_head"><a href="{% url "user_bookmarks" %}">{% trans "(All My Bookmarks)" %}</a></span></h3>
-      </div>
-
-      <div class="module-list">
-        <div class="module-list-wrapper">
-          <ul>
-            {% include "core/bookmark_list_detailed.html" %}
-          </ul>
-        </div>
-      </div>
-
-    </div>
-  </div>
-  <!-- END marks list -->
-  {% endif %}
-  {% endcomment %}
-
-{% endblock %}
+    <!-- END Gold Pitch -->
+{% endblock %}}

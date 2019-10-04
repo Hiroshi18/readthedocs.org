@@ -1,170 +1,170 @@
-# -*- coding: utf-8 -*-
+"""Utilities related to reading and generating indexable search content."""
 
-import codecs
 import logging
+from operator import attrgetter
 
-from pyquery import PyQuery
+from django.shortcuts import get_object_or_404
+from django_elasticsearch_dsl.apps import DEDConfig
+from django_elasticsearch_dsl.registries import registry
+
+from readthedocs.builds.models import Version
+from readthedocs.projects.models import HTMLFile, Project
+from readthedocs.search.documents import PageDocument
+
 
 log = logging.getLogger(__name__)
 
 
-def recurse_while_none(element):
-    if element.text is None:
-        return recurse_while_none(element.getchildren()[0])
-    else:
-        return element.text
+def index_new_files(model, version, build):
+    """Index new files from the version into the search index."""
 
+    if not DEDConfig.autosync_enabled():
+        log.info(
+            'Autosync disabled, skipping indexing into the search index for: %s:%s',
+            version.project.slug,
+            version.slug,
+        )
+        return
 
-def parse_content_from_file(documentation_type, file_path):
     try:
-        with codecs.open(file_path, encoding='utf-8', mode='r') as f:
-            content = f.read()
-    except IOError as e:
-        log.info('(Search Index) Unable to index file: %s, error :%s' % (file_path, e))
-        return ''
+        document = list(registry.get_documents(models=[model]))[0]
+        doc_obj = document()
+        queryset = (
+            doc_obj.get_queryset()
+            .filter(project=version.project, version=version, build=build)
+        )
+        log.info(
+            'Indexing new objecst into search index for: %s:%s',
+            version.project.slug,
+            version.slug,
+        )
+        doc_obj.update(queryset.iterator())
+    except Exception:
+        log.exception('Unable to index a subset of files. Continuing.')
 
-    content = parse_content(documentation_type, content)
 
-    if not content:
-        log.info('(Search Index) Unable to index file: %s, empty file' % (file_path))
-    else:
-        log.debug('(Search Index) %s length: %s' % (file_path, len(content)))
-    return content
-
-
-def parse_content(documentation_type, content):
+def remove_indexed_files(model, version, build):
     """
-    Prepare the text of the html file.
-    Returns the body text of a document
+    Remove files from the version from the search index.
+
+    This excludes files from the current build.
     """
+
+    if not DEDConfig.autosync_enabled():
+        log.info(
+            'Autosync disabled, skipping removal from the search index for: %s:%s',
+            version.project.slug,
+            version.slug,
+        )
+        return
+
     try:
-        to_index = PyQuery(content)('div[role="main"]').text()
-    except ValueError:
-        return ''
-    return to_index
+        document = list(registry.get_documents(models=[model]))[0]
+        log.info(
+            'Deleting old files from search index for: %s:%s',
+            version.project.slug,
+            version.slug,
+        )
+        (
+            document().search()
+            .filter('term', project=version.project.slug)
+            .filter('term', version=version.slug)
+            .exclude('term', build=build)
+            .delete()
+        )
+    except Exception:
+        log.exception('Unable to delete a subset of files. Continuing.')
 
 
-def parse_headers_from_file(documentation_type, file_path):
-    log.debug('(Search Index) Parsing headers for %s' % (file_path))
-    try:
-        with codecs.open(file_path, encoding='utf-8', mode='r') as f:
-            content = f.read()
-    except IOError as e:
-        log.info('(Search Index) Unable to index file: %s, error :%s' % (file_path, e))
-        return ''
-    headers = parse_headers(documentation_type, content)
-    if not headers:
-        log.error('Unable to index file headers for: %s' % file_path)
-    return headers
+# TODO: Rewrite all the views using this in Class Based View,
+# and move this function to a mixin
+def get_project_list_or_404(project_slug, user, version_slug=None):
+    """
+    Return list of project and its subprojects.
+
+    It filters by Version privacy instead of Project privacy,
+    so we can support public versions on private projects.
+    """
+    project_list = []
+    main_project = get_object_or_404(Project, slug=project_slug)
+    subprojects = Project.objects.filter(superprojects__parent_id=main_project.id)
+    for project in list(subprojects) + [main_project]:
+        version = Version.internal.public(user).filter(
+            project__slug=project.slug, slug=version_slug
+        )
+        if version.exists():
+            project_list.append(version.first().project)
+    return project_list
 
 
-def parse_headers(documentation_type, content):
-    headers = []
-    if documentation_type == 'mkdocs':
-        for element in PyQuery(content)('h2'):
-            headers.append(recurse_while_none(element))
-    return headers
+def _get_index(indices, index_name):
+    """
+    Get Index from all the indices.
+
+    :param indices: DED indices list
+    :param index_name: Name of the index
+    :return: DED Index
+    """
+    for index in indices:
+        if str(index) == index_name:
+            return index
 
 
-def parse_sections_from_file(documentation_type, file_path):
-    log.debug('(Search Index) Parsing sections for %s' % (file_path))
-    try:
-        with codecs.open(file_path, encoding='utf-8', mode='r') as f:
-            content = f.read()
-    except IOError as e:
-        log.info('(Search Index) Unable to index file: %s, error :%s' % (file_path, e))
-        return ''
-    sections = parse_sections(documentation_type, content)
-    if not sections:
-        log.error('Unable to index file sections for: %s' % file_path)
-    return sections
+def _get_document(model, document_class):
+    """
+    Get DED document class object from the model and name of document class.
+
+    :param model: The model class to find the document
+    :param document_class: the name of the document class.
+    :return: DED DocType object
+    """
+    documents = registry.get_documents(models=[model])
+
+    for document in documents:
+        if str(document) == document_class:
+            return document
 
 
-def parse_sections(documentation_type, content):
-    sections = []
-    if 'sphinx' in documentation_type:
-        body = PyQuery(content)
-        h1_section = body('.section > h1')
-        if h1_section:
-            div = h1_section.parent()
-            h1_title = h1_section.text().replace(u'¶', '').strip()
-            h1_id = div.attr('id')
-            h1_content = ""
-            next_p = body('h1').next()
-            while next_p:
-                if next_p[0].tag == 'div' and 'class' in next_p[0].attrib:
-                    if 'section' in next_p[0].attrib['class']:
-                        break
-                h1_content += "\n%s\n" % next_p.html()
-                next_p = next_p.next()
-            if h1_content:
-                sections.append({
-                    'id': h1_id,
-                    'title': h1_title,
-                    'content': h1_content,
-                })
+def _indexing_helper(html_objs_qs, wipe=False):
+    """
+    Helper function for reindexing and wiping indexes of projects and versions.
 
-        # Capture text inside h2's
-        section_list = body('.section > h2')
-        for num in range(len(section_list)):
-            div = section_list.eq(num).parent()
-            header = section_list.eq(num)
-            title = header.text().replace(u'¶', '').strip()
-            section_id = div.attr('id')
-            content = div.html()
-            sections.append({
-                'id': section_id,
-                'title': title,
-                'content': content,
-            })
-            log.debug("(Search Index) Section [%s:%s]: %s" % (section_id, title, content))
-    if 'mkdocs' in documentation_type:
-        try:
-            body = PyQuery(content)('div[role="main"]')
-        except ValueError:
-            return ''
+    If ``wipe`` is set to False, html_objs are deleted from the ES index,
+    else, html_objs are indexed.
+    """
+    from readthedocs.search.tasks import index_objects_to_es, delete_objects_in_es
 
-        # H1 content
-        h1 = body('h1')
-        h1_id = h1.attr('id')
-        h1_title = h1.text().strip()
-        h1_content = ""
-        next_p = body('h1').next()
-        while next_p:
-            if next_p[0].tag == 'h2':
-                break
-            h1_html = next_p.html()
-            if h1_html:
-                h1_content += "\n%s\n" % h1_html
-            next_p = next_p.next()
-        if h1_content:
-            sections.append({
-                'id': h1_id,
-                'title': h1_title,
-                'content': h1_content,
-            })
+    if html_objs_qs:
+        obj_ids = []
+        for html_objs in html_objs_qs:
+            obj_ids.extend([obj.id for obj in html_objs])
 
-        # H2 content
-        section_list = body('h2')
-        for num in range(len(section_list)):
-            h2 = section_list.eq(num)
-            h2_title = h2.text().strip()
-            section_id = h2.attr('id')
-            h2_content = ""
-            next_p = body('h2').next()
-            while next_p:
-                if next_p[0].tag == 'h2':
-                    break
-                h2_html = next_p.html()
-                if h2_html:
-                    h2_content += "\n%s\n" % h2_html
-                next_p = next_p.next()
-            if h2_content:
-                sections.append({
-                    'id': section_id,
-                    'title': h2_title,
-                    'content': h2_content,
-                })
-            log.debug("(Search Index) Section [%s:%s]: %s" % (section_id, h2_title, h2_content))
+        # removing redundant ids if exists.
+        obj_ids = list(set(obj_ids))
 
-    return sections
+        if obj_ids:
+            kwargs = {
+                'app_label': HTMLFile._meta.app_label,
+                'model_name': HTMLFile.__name__,
+                'document_class': str(PageDocument),
+                'objects_id': obj_ids,
+            }
+
+            if not wipe:
+                index_objects_to_es.delay(**kwargs)
+            else:
+                delete_objects_in_es.delay(**kwargs)
+
+
+def _get_sorted_results(results, source_key='_source'):
+    """Sort results according to their score and returns results as list."""
+    sorted_results = [
+        {
+            'type': hit._nested.field,
+            source_key: hit._source.to_dict(),
+            'highlight': hit.highlight.to_dict() if hasattr(hit, 'highlight') else {}
+        }
+        for hit in sorted(results, key=attrgetter('_score'), reverse=True)
+    ]
+
+    return sorted_results

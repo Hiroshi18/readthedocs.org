@@ -1,14 +1,24 @@
+"""Mock versions of many API-related classes."""
 import json
+from contextlib import contextmanager
+
+import mock
+
 
 # Mock tastypi API.
 
-class ProjectData(object):
+
+class ProjectData:
     def get(self):
         return dict()
 
+    def put(self, x=None):
+        return x
 
-def mockVersion(repo):
-    class MockVersion(object):
+
+def mock_version(repo):
+    """Construct and return a class implementing the Version interface."""
+    class MockVersion:
         def __init__(self, x=None):
             pass
 
@@ -16,6 +26,7 @@ def mockVersion(repo):
             return x
 
         def get(self, **kwargs):
+            """Returns mock data to emulate real Version objects."""
             # SCIENTIST DOG
             version = json.loads("""
                 {
@@ -33,11 +44,9 @@ def mockVersion(repo):
                 {
                     "absolute_url": "/projects/docs/",
                     "analytics_code": "",
-                    "copyright": "",
                     "default_branch": "",
                     "default_version": "latest",
                     "description": "Make docs.readthedocs.org work :D",
-                    "django_packages_url": "",
                     "documentation_type": "sphinx",
                     "id": "2599",
                     "modified_date": "2012-03-12T19:59:09.130773",
@@ -49,27 +58,37 @@ def mockVersion(repo):
                     "requirements_file": "",
                     "resource_uri": "/api/v1/project/2599/",
                     "slug": "docs",
-                    "subdomain": "http://docs.readthedocs.org/",
-                    "suffix": ".rst",
-                    "theme": "default",
-                    "use_virtualenv": false,
+                    "install_project": false,
                     "users": [
                         "/api/v1/user/1/"
-                    ],
-                    "version": ""
+                    ]
                 }""")
             version['project'] = project
             project['repo'] = repo
             if 'slug' in kwargs:
                 return {'objects': [version], 'project': project}
-            else:
-              return version
+            return version
     return MockVersion
 
 
-class MockApi(object):
+class MockApi:
     def __init__(self, repo):
-        self.version = mockVersion(repo)
+        self.version = mock_version(repo)
 
-    def project(self, x):
+    def project(self, _):
         return ProjectData()
+
+    def build(self, _):
+        return mock.Mock(**{'get.return_value': {'id': 123, 'state': 'triggered'}})
+
+    def command(self, _):
+        return mock.Mock(**{'get.return_value': {}})
+
+
+@contextmanager
+def mock_api(repo):
+    api_mock = MockApi(repo)
+    with mock.patch('readthedocs.api.v2.client.api', api_mock), \
+            mock.patch('readthedocs.projects.tasks.api_v2', api_mock), \
+            mock.patch('readthedocs.doc_builder.environments.api_v2', api_mock):
+        yield api_mock

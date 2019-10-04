@@ -1,42 +1,35 @@
-"""Default values and other various configuration for projects,
-including available theme names and repository types.
+# -*- coding: utf-8 -*-
+
+"""
+Project constants.
+
+Default values and other various configuration for projects, including available
+theme names and repository types.
 """
 
 import re
 
 from django.utils.translation import ugettext_lazy as _
 
-THEME_DEFAULT = 'default'
-THEME_SPHINX = 'sphinxdoc'
-THEME_SCROLLS = 'scrolls'
-THEME_AGOGO = 'agogo'
-THEME_TRADITIONAL = 'traditional'
-THEME_NATURE = 'nature'
-THEME_HAIKU = 'haiku'
 
 DOCUMENTATION_CHOICES = (
     ('sphinx', _('Sphinx Html')),
+    ('mkdocs', _('Mkdocs (Markdown)')),
     ('sphinx_htmldir', _('Sphinx HtmlDir')),
     ('sphinx_singlehtml', _('Sphinx Single Page HTML')),
-    ('mkdocs', _('Mkdocs')),
-    #('sphinx_websupport2', _('Sphinx Websupport')),
-    #('sphinx_man', 'Sphinx Man'),
-    #('rdoc', 'Rdoc'),
 )
 
-DEFAULT_THEME_CHOICES = (
-    # Translators: This is a name of a Sphinx theme.
-    (THEME_DEFAULT, _('Default')),
-    # Translators: This is a name of a Sphinx theme.
-    (THEME_SPHINX, _('Sphinx Docs')),
-    #(THEME_SCROLLS, 'Scrolls'),
-    #(THEME_AGOGO, 'Agogo'),
-    # Translators: This is a name of a Sphinx theme.
-    (THEME_TRADITIONAL, _('Traditional')),
-    # Translators: This is a name of a Sphinx theme.
-    (THEME_NATURE, _('Nature')),
-    # Translators: This is a name of a Sphinx theme.
-    (THEME_HAIKU, _('Haiku')),
+MEDIA_TYPE_HTML = 'html'
+MEDIA_TYPE_PDF = 'pdf'
+MEDIA_TYPE_EPUB = 'epub'
+MEDIA_TYPE_HTMLZIP = 'htmlzip'
+MEDIA_TYPE_JSON = 'json'
+MEDIA_TYPES = (
+    MEDIA_TYPE_HTML,
+    MEDIA_TYPE_PDF,
+    MEDIA_TYPE_EPUB,
+    MEDIA_TYPE_HTMLZIP,
+    MEDIA_TYPE_JSON,
 )
 
 SAMPLE_FILES = (
@@ -69,11 +62,16 @@ STATUS_CHOICES = (
     (DELETED_STATUS, _('Deleted')),
 )
 
+REPO_TYPE_GIT = 'git'
+REPO_TYPE_SVN = 'svn'
+REPO_TYPE_HG = 'hg'
+REPO_TYPE_BZR = 'bzr'
+
 REPO_CHOICES = (
-    ('git', _('Git')),
-    ('svn', _('Subversion')),
-    ('hg', _('Mercurial')),
-    ('bzr', _('Bazaar')),
+    (REPO_TYPE_GIT, _('Git')),
+    (REPO_TYPE_SVN, _('Subversion')),
+    (REPO_TYPE_HG, _('Mercurial')),
+    (REPO_TYPE_BZR, _('Bazaar')),
 )
 
 PUBLIC = 'public'
@@ -87,7 +85,7 @@ PRIVACY_CHOICES = (
 )
 
 IMPORTANT_VERSION_FILTERS = {
-    'slug': 'important'
+    'slug': 'important',
 }
 
 # in the future this constant can be replaced with a implementation that
@@ -99,48 +97,275 @@ PYTHON_CHOICES = (
 )
 
 # Via http://sphinx-doc.org/latest/config.html#confval-language
+# Languages supported for the lang_slug in the URL
+# Translations for builtin Sphinx messages only available for a subset of these
 LANGUAGES = (
-    ("bn", "Bengali"),
-    ("ca", "Catalan"),
-    ("cs", "Czech"),
-    ("da", "Danish"),
-    ("de", "German"),
-    ("en", "English"),
-    ("es", "Spanish"),
-    ("et", "Estonian"),
-    ("eu", "Basque"),
-    ("fa", "Iranian"),
-    ("fi", "Finnish"),
-    ("fr", "French"),
-    ("hr", "Croatian"),
-    ("hu", "Hungarian"),
-    ("id", "Indonesian"),
-    ("it", "Italian"),
-    ("ja", "Japanese"),
-    ("ko", "Korean"),
-    ("lt", "Lithuanian"),
-    ("lv", "Latvian"),
-    ("mk", "Macedonian"),
-    ("ne", "Nepali"),
-    ("nl", "Dutch"),
-    ("pl", "Polish"),
-    ("ru", "Russian"),
-    ("si", "Sinhala"),
-    ("sk", "Slovak"),
-    ("sl", "Slovenian"),
-    ("sv", "Swedish"),
-    ("tr", "Turkish"),
-    ("vi", "Vietnamese"),
+    ('aa', 'Afar'),
+    ('ab', 'Abkhaz'),
+    ('acr', 'Achi'),
+    ('af', 'Afrikaans'),
+    ('agu', 'Awakateko'),
+    ('am', 'Amharic'),
+    ('ar', 'Arabic'),
+    ('as', 'Assamese'),
+    ('ay', 'Aymara'),
+    ('az', 'Azerbaijani'),
+    ('ba', 'Bashkir'),
+    ('be', 'Belarusian'),
+    ('bg', 'Bulgarian'),
+    ('bh', 'Bihari'),
+    ('bi', 'Bislama'),
+    ('bn', 'Bengali'),
+    ('bo', 'Tibetan'),
+    ('br', 'Breton'),
+    ('ca', 'Catalan'),
+    ('caa', 'Ch\'orti\''),
+    ('cac', 'Chuj'),
+    ('cab', 'Garífuna'),
+    ('cak', 'Kaqchikel'),
+    ('co', 'Corsican'),
+    ('cs', 'Czech'),
+    ('cy', 'Welsh'),
+    ('da', 'Danish'),
+    ('de', 'German'),
+    ('dz', 'Dzongkha'),
+    ('el', 'Greek'),
+    ('en', 'English'),
+    ('eo', 'Esperanto'),
+    ('es', 'Spanish'),
+    ('et', 'Estonian'),
+    ('eu', 'Basque'),
+    ('fa', 'Iranian'),
+    ('fi', 'Finnish'),
+    ('fj', 'Fijian'),
+    ('fo', 'Faroese'),
+    ('fr', 'French'),
+    ('fy', 'Western Frisian'),
+    ('ga', 'Irish'),
+    ('gd', 'Scottish Gaelic'),
+    ('gl', 'Galician'),
+    ('gn', 'Guarani'),
+    ('gu', 'Gujarati'),
+    ('ha', 'Hausa'),
+    ('hi', 'Hindi'),
+    ('he', 'Hebrew'),
+    ('hr', 'Croatian'),
+    ('hu', 'Hungarian'),
+    ('hy', 'Armenian'),
+    ('ia', 'Interlingua'),
+    ('id', 'Indonesian'),
+    ('ie', 'Interlingue'),
+    ('ik', 'Inupiaq'),
+    ('is', 'Icelandic'),
+    ('it', 'Italian'),
+    ('itz', 'Itza\''),
+    ('iu', 'Inuktitut'),
+    ('ixl', 'Ixil'),
+    ('ja', 'Japanese'),
+    ('jac', 'Popti\''),
+    ('jv', 'Javanese'),
+    ('ka', 'Georgian'),
+    ('kjb', 'Q\'anjob\'al'),
+    ('kek', 'Q\'eqchi\''),
+    ('kk', 'Kazakh'),
+    ('kl', 'Kalaallisut'),
+    ('km', 'Khmer'),
+    ('kn', 'Kannada'),
+    ('knj', 'Akateko'),
+    ('ko', 'Korean'),
+    ('ks', 'Kashmiri'),
+    ('ku', 'Kurdish'),
+    ('ky', 'Kyrgyz'),
+    ('la', 'Latin'),
+    ('ln', 'Lingala'),
+    ('lo', 'Lao'),
+    ('lt', 'Lithuanian'),
+    ('lv', 'Latvian'),
+    ('mam', 'Mam'),
+    ('mg', 'Malagasy'),
+    ('mi', 'Maori'),
+    ('mk', 'Macedonian'),
+    ('ml', 'Malayalam'),
+    ('mn', 'Mongolian'),
+    ('mop', 'Mopan'),
+    ('mr', 'Marathi'),
+    ('ms', 'Malay'),
+    ('mt', 'Maltese'),
+    ('my', 'Burmese'),
+    ('na', 'Nauru'),
+    ('ne', 'Nepali'),
+    ('nl', 'Dutch'),
+    ('no', 'Norwegian'),
+    ('oc', 'Occitan'),
+    ('om', 'Oromo'),
+    ('or', 'Oriya'),
+    ('pa', 'Panjabi'),
+    ('pl', 'Polish'),
+    ('pnb', 'Western Punjabi'),
+    ('poc', 'Poqomam'),
+    ('poh', 'Poqomchi'),
+    ('ps', 'Pashto'),
+    ('pt', 'Portuguese'),
+    ('qu', 'Quechua'),
+    ('quc', 'K\'iche\''),
+    ('qum', 'Sipakapense'),
+    ('quv', 'Sakapulteko'),
+    ('rm', 'Romansh'),
+    ('rn', 'Kirundi'),
+    ('ro', 'Romanian'),
+    ('ru', 'Russian'),
+    ('rw', 'Kinyarwanda'),
+    ('sa', 'Sanskrit'),
+    ('sd', 'Sindhi'),
+    ('sg', 'Sango'),
+    ('si', 'Sinhala'),
+    ('sk', 'Slovak'),
+    ('skr', 'Saraiki'),
+    ('sl', 'Slovenian'),
+    ('sm', 'Samoan'),
+    ('sn', 'Shona'),
+    ('so', 'Somali'),
+    ('sq', 'Albanian'),
+    ('sr', 'Serbian'),
+    ('ss', 'Swati'),
+    ('st', 'Southern Sotho'),
+    ('su', 'Sudanese'),
+    ('sv', 'Swedish'),
+    ('sw', 'Swahili'),
+    ('ta', 'Tamil'),
+    ('te', 'Telugu'),
+    ('tg', 'Tajik'),
+    ('th', 'Thai'),
+    ('ti', 'Tigrinya'),
+    ('tk', 'Turkmen'),
+    ('tl', 'Tagalog'),
+    ('tn', 'Tswana'),
+    ('to', 'Tonga'),
+    ('tr', 'Turkish'),
+    ('ts', 'Tsonga'),
+    ('tt', 'Tatar'),
+    ('ttc', 'Tektiteko'),
+    ('tzj', 'Tz\'utujil'),
+    ('tw', 'Twi'),
+    ('ug', 'Uyghur'),
+    ('uk', 'Ukrainian'),
+    ('ur', 'Urdu'),
+    ('usp', 'Uspanteko'),
+    ('uz', 'Uzbek'),
+    ('vi', 'Vietnamese'),
+    ('vo', 'Volapuk'),
+    ('wo', 'Wolof'),
+    ('xh', 'Xhosa'),
+    ('xin', 'Xinka'),
+    ('yi', 'Yiddish'),
+    ('yo', 'Yoruba'),
+    ('za', 'Zhuang'),
+    ('zh', 'Chinese'),
+    ('zu', 'Zulu'),
     # Try these to test our non-2 letter language support
-    ("nb_NO", "Norwegian Bokmal"),
-    ("pt_BR", "Brazilian Portuguese"),
-    ("uk_UA", "Ukrainian"),
-    ("zh_CN", "Simplified Chinese"),
-    ("zh_TW", "Traditional Chinese"),
+    ('nb_NO', 'Norwegian Bokmal'),
+    ('pt_BR', 'Brazilian Portuguese'),
+    ('es_MX', 'Mexican Spanish'),
+    ('uk_UA', 'Ukrainian'),
+    ('zh_CN', 'Simplified Chinese'),
+    ('zh_TW', 'Traditional Chinese'),
 )
 
-LANGUAGES_REGEX = "|".join(
-    [re.escape(code[0]) for code in LANGUAGES]
+LANGUAGES_REGEX = '|'.join([re.escape(code[0]) for code in LANGUAGES])
+
+PROGRAMMING_LANGUAGES = (
+    ('words', 'Only Words'),
+    ('py', 'Python'),
+    ('js', 'JavaScript'),
+    ('php', 'PHP'),
+    ('ruby', 'Ruby'),
+    ('perl', 'Perl'),
+    ('java', 'Java'),
+    ('go', 'Go'),
+    ('julia', 'Julia'),
+    ('c', 'C'),
+    ('csharp', 'C#'),
+    ('cpp', 'C++'),
+    ('objc', 'Objective-C'),
+    ('css', 'CSS'),
+    ('ts', 'TypeScript'),
+    ('swift', 'Swift'),
+    ('vb', 'Visual Basic'),
+    ('r', 'R'),
+    ('scala', 'Scala'),
+    ('groovy', 'Groovy'),
+    ('coffee', 'CoffeeScript'),
+    ('lua', 'Lua'),
+    ('haskell', 'Haskell'),
+    ('other', 'Other'),
 )
 
-LOG_TEMPLATE = u"(Build) [{project}:{version}] {msg}"
+LOG_TEMPLATE = '(Build) [%(project)s:%(version)s] %(msg)s'
+
+PROJECT_PK_REGEX = r'(?:[-\w]+)'
+PROJECT_SLUG_REGEX = r'(?:[-\w]+)'
+
+GITHUB_REGEXS = [
+    re.compile(r'github.com/(.+)/(.+)(?:\.git){1}$'),
+    re.compile(r'github.com/(.+)/(.+)'),
+    re.compile(r'github.com:(.+)/(.+)\.git$'),
+]
+BITBUCKET_REGEXS = [
+    re.compile(r'bitbucket.org/(.+)/(.+)\.git$'),
+    re.compile(r'@bitbucket.org/(.+)/(.+)\.git$'),
+    re.compile(r'bitbucket.org/(.+)/(.+)/?'),
+    re.compile(r'bitbucket.org:(.+)/(.+)\.git$'),
+]
+GITLAB_REGEXS = [
+    re.compile(r'gitlab.com/(.+)/(.+)(?:\.git){1}$'),
+    re.compile(r'gitlab.com/(.+)/(.+)'),
+    re.compile(r'gitlab.com:(.+)/(.+)\.git$'),
+]
+GITHUB_URL = (
+    'https://github.com/{user}/{repo}/'
+    '{action}/{version}{docroot}{path}{source_suffix}'
+)
+GITHUB_COMMIT_URL = (
+    'https://github.com/{user}/{repo}/'
+    'commit/{commit}'
+)
+GITHUB_PULL_REQUEST_URL = (
+    'https://github.com/{user}/{repo}/'
+    'pull/{number}'
+)
+GITHUB_PULL_REQUEST_COMMIT_URL = (
+    'https://github.com/{user}/{repo}/'
+    'pull/{number}/commits/{commit}'
+)
+BITBUCKET_URL = (
+    'https://bitbucket.org/{user}/{repo}/'
+    'src/{version}{docroot}{path}{source_suffix}'
+)
+BITBUCKET_COMMIT_URL = (
+    'https://bitbucket.org/{user}/{repo}/'
+    'commits/{commit}'
+)
+GITLAB_URL = (
+    'https://gitlab.com/{user}/{repo}/'
+    '{action}/{version}{docroot}{path}{source_suffix}'
+)
+GITLAB_COMMIT_URL = (
+    'https://gitlab.com/{user}/{repo}/'
+    'commit/{commit}'
+)
+GITLAB_MERGE_REQUEST_COMMIT_URL = (
+    'https://gitlab.com/{user}/{repo}/'
+    'commit/{commit}?merge_request_iid={number}'
+)
+GITLAB_MERGE_REQUEST_URL = (
+    'https://gitlab.com/{user}/{repo}/'
+    'merge_requests/{number}'
+)
+
+# Patterns to pull merge/pull request from providers
+GITHUB_PR_PULL_PATTERN = 'pull/{id}/head:external-{id}'
+GITLAB_MR_PULL_PATTERN = 'merge-requests/{id}/head:external-{id}'
+
+# Git provider names
+GITHUB_BRAND = 'GitHub'
+GITLAB_BRAND = 'GitLab'

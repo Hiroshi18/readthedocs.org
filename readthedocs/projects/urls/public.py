@@ -1,56 +1,84 @@
-from django.conf.urls import patterns, url
+"""Project URLS for public users."""
 
-from projects.views.public import ProjectIndex
+from django.conf.urls import url
 
-urlpatterns = patterns(
-    # base view, flake8 complains if it is on the previous line.
-    '',
-    url(r'^$',
+from readthedocs.builds import views as build_views
+from readthedocs.constants import pattern_opts
+from readthedocs.projects.views import public
+from readthedocs.projects.views.public import ProjectDetailView, ProjectIndex
+from readthedocs.search import views as search_views
+
+
+urlpatterns = [
+    url(
+        r'^$',
         ProjectIndex.as_view(),
-        name='projects_list'),
-
-    url(r'^search/autocomplete/$',
-        'projects.views.public.search_autocomplete',
-        name='search_autocomplete'),
-
-    url(r'^autocomplete/version/(?P<project_slug>[-\w]+)/$',
-        'projects.views.public.version_autocomplete',
-        name='version_autocomplete'),
-
-    url(r'^autocomplete/filter/version/(?P<project_slug>[-\w]+)/$',
-        'projects.views.public.version_filter_autocomplete',
-        name='version_filter_autocomplete'),
-
-    url(r'^tags/(?P<tag>[-\w]+)/$',
+        name='projects_list',
+    ),
+    url(
+        r'^(?P<invalid_project_slug>{project_slug}_{project_slug})/'.format(**pattern_opts),
+        public.project_redirect,
+        name='project_redirect',
+    ),
+    url(
+        r'^(?P<project_slug>{project_slug})/$'.format(**pattern_opts),
+        ProjectDetailView.as_view(),
+        name='projects_detail',
+    ),
+    url(
+        r'^(?P<project_slug>{project_slug})/downloads/$'.format(**pattern_opts),
+        public.project_downloads,
+        name='project_downloads',
+    ),
+    url(
+        (
+            r'^(?P<project_slug>{project_slug})/downloads/(?P<type_>[-\w]+)/'
+            r'(?P<version_slug>{version_slug})/$'.format(**pattern_opts)
+        ),
+        public.project_download_media,
+        name='project_download_media',
+    ),
+    url(
+        r'^(?P<project_slug>{project_slug})/badge/$'.format(**pattern_opts),
+        public.project_badge,
+        name='project_badge',
+    ),
+    url(
+        (
+            r'^(?P<project_slug>{project_slug})/tools/embed/$'.format(
+                **pattern_opts
+            )
+        ),
+        public.project_embed,
+        name='project_embed',
+    ),
+    url(
+        r'^(?P<project_slug>{project_slug})/search/$'.format(**pattern_opts),
+        search_views.elastic_search,
+        name='elastic_project_search',
+    ),
+    url(
+        (
+            r'^(?P<project_slug>{project_slug})/builds/(?P<build_pk>\d+)/$'.format(
+                **pattern_opts
+            )
+        ),
+        build_views.BuildDetail.as_view(),
+        name='builds_detail',
+    ),
+    url(
+        (r'^(?P<project_slug>{project_slug})/builds/$'.format(**pattern_opts)),
+        build_views.BuildList.as_view(),
+        name='builds_project_list',
+    ),
+    url(
+        r'^(?P<project_slug>{project_slug})/versions/$'.format(**pattern_opts),
+        public.project_versions,
+        name='project_version_list',
+    ),
+    url(
+        r'^tags/(?P<tag>[-\w]+)/$',
         ProjectIndex.as_view(),
-        name='projects_tag_detail'),
-
-    url(r'^(?P<project_slug>[-\w]+)/$',
-        'projects.views.public.project_detail',
-        name='projects_detail'),
-
-    url(r'^(?P<project_slug>[-\w]+)/downloads/$',
-        'projects.views.public.project_downloads',
-        name='project_downloads'),
-
-    url(r'^(?P<project_slug>[-\w]+)/downloads/(?P<type>[-\w]+)/(?P<version_slug>[-\w.]+)/$',
-        'projects.views.public.project_download_media',
-        name='project_download_media'),
-
-    url(r'^(?P<project_slug>[-\w]+)/badge/$',
-        'projects.views.public.project_badge',
-        name='project_badge'),
-
-    url(r'^(?P<project_slug>[-\w]+)/search/$',
-        'projects.views.public.elastic_project_search',
-        name='elastic_project_search'),
-
-    url(r'^(?P<project_slug>[-\w]+)/autocomplete/file/$',
-        'projects.views.public.file_autocomplete',
-        name='file_autocomplete'),
-
-
-    url(r'^(?P<username>\w+)/$',
-        'projects.views.public.project_index',
-        name='projects_user_list'),
-)
+        name='projects_tag_detail',
+    ),
+]

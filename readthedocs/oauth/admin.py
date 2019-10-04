@@ -1,13 +1,25 @@
+# -*- coding: utf-8 -*-
+
+"""Admin configuration for the OAuth app."""
+
 from django.contrib import admin
-from .models import GithubProject, GithubOrganization
+
+from .models import RemoteOrganization, RemoteRepository
 
 
-class GithubProjectAdmin(admin.ModelAdmin):
+class RemoteRepositoryAdmin(admin.ModelAdmin):
+
+    """Admin configuration for the RemoteRepository model."""
+
     raw_id_fields = ('users',)
 
 
-class GithubOrganizationAdmin(admin.ModelAdmin):
+class RemoteOrganizationAdmin(admin.ModelAdmin):
+
+    """Admin configuration for the RemoteOrganization model."""
+
     raw_id_fields = ('users',)
 
-admin.site.register(GithubOrganization, GithubOrganizationAdmin)
-admin.site.register(GithubProject, GithubProjectAdmin)
+
+admin.site.register(RemoteRepository, RemoteRepositoryAdmin)
+admin.site.register(RemoteOrganization, RemoteOrganizationAdmin)
